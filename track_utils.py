@@ -32,7 +32,6 @@ def get_dpath(mouse, session, frame, exp_path):
         file path to the experiment where the overall data are stored.
     '''
 
-    exp_path = '../Behavior/'
     dpath = os.path.join(exp_path, '{s}/{m}_{s}_{f}.dat'.format(m=mouse, s=session, f=frame))
     
     return dpath
