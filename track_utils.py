@@ -16,14 +16,24 @@ from plotly.subplots import make_subplots
 ## Loading and shaping data functions
 ## ==================================
 
-def get_dpath(mouse, session, frame):
+def get_dpath(mouse, session, frame, exp_path):
+    '''
+    Returns the file path to the dat file where behavioral data are stored, for a given mouse, session, and frame.
+
+    Parameters
+    ==========
+    mouse : str
+        string representing the mouse of interest
+    session : str
+        string representing the session of interest
+    frame : str
+        One of 'Room' or 'Arena', representing the frame of reference of the data.
+    exp_path : str
+        file path to the experiment where the overall data are stored.
+    '''
 
     exp_path = '../Behavior/'
     dpath = os.path.join(exp_path, '{s}/{m}_{s}_{f}.dat'.format(m=mouse, s=session, f=frame))
-
-    # exp_path = '/Users/joezaki/Desktop/BehaviorData/'
-    # cohort = mouse[0]
-    # dpath = os.path.join(exp_path, '{c}/DATfiles/{m}_{s}_{f}.dat'.format(c=cohort, m=mouse, s=session, f=frame))
     
     return dpath
 
