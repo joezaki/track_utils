@@ -404,8 +404,8 @@ def occupancy_plot(
     title : str
         Title for the entire plot. Default is None.
     plot_type : str
-        One of 'line', 'scatter', or 'heatmap' to plot either a time series line, scatterpoints with a line connecting them,
-        or heatmap plot, respectively. Default is 'line'.
+        One of 'line', 'scatter', 'heatmap', or 'polar' to plot either a time series line, scatterpoints with a line connecting them,
+        heatmap plot, or polar histogram plot, respectively. Default is 'line'.
     hist_bars : int
         Number of bars to break up the polar histogram into. Only used if plot_type=='polar'. Default is 50.
     save_path : str
