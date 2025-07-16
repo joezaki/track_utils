@@ -390,6 +390,8 @@ def occupancy_plot(
         title=None,
         plot_type='line',
         hist_bars=50,
+        plot_width=800,
+        plot_height=800,
         save_path=None,
         **kwargs
         ):
@@ -417,11 +419,13 @@ def occupancy_plot(
         heatmap plot, or polar histogram plot, respectively. Default is 'line'.
     hist_bars : int
         Number of bars to break up the polar histogram into. Only used if plot_type=='polar'. Default is 50.
+    plot_width, plot_height : int
+        Width and height of the plot. Defaults are 800 and 800.
     save_path : str
-        bsolute path to the directory where the file should be stored, including filename and extension. If this
+        Absolute path to the directory where the file should be stored, including filename and extension. If this
         is not None, the plot will be saved; otherwise it won't be saved. Default is None.
     **kwargs
-        Extra keyword arguments to be fed into the get_occupancy_plot() func above.
+        Extra keyword arguments to be fed into the get_occupancy_trace() func above.
     '''
 
     # optionally subset time
@@ -461,7 +465,7 @@ def occupancy_plot(
                                   opacity=0.5))
 
     # configure plot
-    fig.update_layout(template='simple_white', width=800, height=800,
+    fig.update_layout(template='simple_white', width=plot_width, height=plot_height,
                       title_text=title, title_x=0.5, showlegend=False,
                       yaxis=dict(visible=False, autorange='reversed', scaleanchor='x', scaleratio=1),
                       xaxis=dict(visible=False),
@@ -476,7 +480,17 @@ def occupancy_plot(
             os.makedirs(dirname)
         fig.write_image(save_path, scale=4)
 
-    fig.show()
+    config = {
+        'scrollZoom':True,
+        'toImageButtonOptions': {
+            'format': 'svg',
+            'filename': 'custom_image',
+            'height': plot_height,
+            'width': plot_width,
+            'scale': 5
+            }
+            }
+    fig.show(config=config, renderer='notebook_connected')
 
 # -----------------------------------------
 
@@ -538,7 +552,7 @@ def plot_occupancy_list(
         bsolute path to the directory where the file should be stored, including filename and extension. If this
         is not None, the plot will be saved; otherwise it won't be saved. Default is None.
     **kwargs
-        Extra keyword arguments to be fed into the get_occupancy_plot() func above.
+        Extra keyword arguments to be fed into the get_occupancy_trace() func above.
     """
 
 
@@ -622,5 +636,15 @@ def plot_occupancy_list(
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         fig.write_image(save_path, scale=4)
-    
-    fig.show(renderer='notebook_connected')
+
+    config = {
+        'scrollZoom':True,
+        'toImageButtonOptions': {
+            'format': 'svg',
+            'filename': 'custom_image',
+            'height': plot_height,
+            'width': plot_width,
+            'scale':5
+            }
+            }
+    fig.show(config=config, renderer='notebook_connected')
