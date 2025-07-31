@@ -44,6 +44,7 @@ def parse_data_file(
         colnames=['Frame', 'Timestamp', 'X', 'Y', 'Sectors', 'State', 'CurrentLevel', 'MotorState', 'Flags', 'FrameInfo'],
         limit=None,
         sampling_rate=1/30,
+        good_frameinfo=3,
         plot_dropped_frame_histogram=False,
         plot_bad_frame_histogram=False
         ):
@@ -62,6 +63,8 @@ def parse_data_file(
         Number of consecutive NaN frames to tolerate. Default is None.
     sampling_rate : float
         Sampling rate of the time series recording, in seconds. Default is 1/30.
+    good_frameinfo : int
+        Value that is considered a good frame to the tracker metadata. Default is 3.
     plot_bad_frame_histogram : bool
         Whether or not to plot a histogram of the consecutive bad frame chunks. Default is False.
     plot_dropped_frame_histogram : bool
@@ -89,7 +92,7 @@ def parse_data_file(
     data.drop(columns='index', inplace=True)
 
     # find instances where tracking is not good
-    bad_frame_bool = data['FrameInfo'] != 3
+    bad_frame_bool = data['FrameInfo'] != good_frameinfo
     data.loc[bad_frame_bool,'X'] = np.nan
     data.loc[bad_frame_bool,'Y'] = np.nan
     data.loc[bad_frame_bool,'State'] = np.nan
