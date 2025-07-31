@@ -41,6 +41,7 @@ def get_dpath(mouse, session, frame, exp_path):
 def parse_data_file(
         dpath,
         header_rows=32,
+        colnames=['Frame', 'Timestamp', 'X', 'Y', 'Sectors', 'State', 'CurrentLevel', 'MotorState', 'Flags', 'FrameInfo'],
         limit=None,
         sampling_rate=1/30,
         plot_dropped_frame_histogram=False,
@@ -55,6 +56,8 @@ def parse_data_file(
         Path to file of interest
     header_rows : int
         Number of intial rows comprise the header. These will be excluded. Default is 32.
+    colnames : list
+        list of column names to update the dataframe column names to.
     limit : int
         Number of consecutive NaN frames to tolerate. Default is None.
     sampling_rate : float
@@ -66,7 +69,6 @@ def parse_data_file(
     '''
 
     data = pd.read_csv(dpath, sep='\t', skiprows=header_rows, header=None)
-    colnames = ['Frame', 'Timestamp', 'X', 'Y', 'Sectors', 'State', 'CurrentLevel', 'MotorState', 'Flags', 'FrameInfo']
     data.columns = colnames
 
     if plot_dropped_frame_histogram:
