@@ -45,6 +45,8 @@ def parse_data_file(
         limit=None,
         sampling_rate=1/30,
         good_frameinfo=3,
+        fix_dropped_frames=True,
+        fix_bad_frames=True,
         plot_dropped_frame_histogram=False,
         plot_bad_frame_histogram=False
         ):
@@ -65,6 +67,12 @@ def parse_data_file(
         Sampling rate of the time series recording, in seconds. Default is 1/30.
     good_frameinfo : int
         Value that is considered a good frame to the tracker metadata. Default is 3.
+    fix_dropped_frames : bool
+        Whether or not to fix the frames that were not captured, based on
+        the 'Frame' column in data. Default is True.
+    fix_bad_frames : bool
+        Whether or not to fix the frames that were recorded but whose 'FrameInfo' was not
+        equal to good_frameinfo. Default is True.
     plot_bad_frame_histogram : bool
         Whether or not to plot a histogram of the consecutive bad frame chunks. Default is False.
     plot_dropped_frame_histogram : bool
@@ -83,19 +91,31 @@ def parse_data_file(
         fig.show()
 
     # find lost frames and add them back in as nans
-    idealized_frames = np.arange(1,data['Frame'].values[-1]+1)
-    missing_frame_idx = idealized_frames[~np.isin(idealized_frames, data['Frame'].values)]
-    missing_df = pd.DataFrame(columns = colnames)
-    missing_df['Frame'] = missing_frame_idx
-    data = pd.concat([data, missing_df])
-    data = data.sort_values('Frame').reset_index()
-    data.drop(columns='index', inplace=True)
+    if fix_dropped_frames:
+        idealized_frames = np.arange(1,data['Frame'].values[-1]+1)
+        missing_frame_idx = idealized_frames[~np.isin(idealized_frames, data['Frame'].values)]
+        missing_df = pd.DataFrame(columns = colnames)
+        missing_df['Frame'] = missing_frame_idx
+        data = pd.concat([data, missing_df])
+        data = data.sort_values('Frame').reset_index()
+        data.drop(columns='index', inplace=True)
 
     # find instances where tracking is not good
-    bad_frame_bool = data['FrameInfo'] != good_frameinfo
-    data.loc[bad_frame_bool,'X'] = np.nan
-    data.loc[bad_frame_bool,'Y'] = np.nan
-    data.loc[bad_frame_bool,'State'] = np.nan
+    if fix_bad_frames:
+        bad_frame_bool = data['FrameInfo'] != good_frameinfo
+        data.loc[bad_frame_bool,'X'] = np.nan
+        data.loc[bad_frame_bool,'Y'] = np.nan
+        data.loc[bad_frame_bool,'State'] = np.nan
+
+        if plot_bad_frame_histogram:
+            # plot a histogram representing the duration of each lapse of tracking (when state does not equal 3)
+            num_consecutive, freq_consecutive = np.unique(np.unique(label(bad_frame_bool.values)[0], return_counts=True)[1][1:], return_counts=True)
+            fig = go.Figure(data=[go.Bar(x=num_consecutive, y=freq_consecutive)])
+            if limit is not None:
+                fig.add_vline(x=limit, line_width=2, line_color='black', line_dash='dath', opacity=1)
+            fig.update_layout(template='simple_white', width=400, height=400, title_text=os.path.basename(dpath),
+                            yaxis_title='Frequency', xaxis_title='Number of Consecutive<br>Bad Frames')
+            fig.show()
 
     # interpolate linearly for position and timestamp, fill with nearest for rest of data
     data['X'] = data['X'].infer_objects(copy=False).interpolate(method='linear', limit=limit)
@@ -103,16 +123,6 @@ def parse_data_file(
     data['Timestamp'] = data['Timestamp'].infer_objects(copy=False).interpolate(method='linear', limit=limit)
     data['State'] = data['State'].infer_objects(copy=False).interpolate(method='nearest', limit=limit)
     data = data.infer_objects(copy=False).ffill(limit=limit).bfill(limit=limit) # in case first and/or last frames are invalid, it will fill with nearest good ones
-
-    if plot_bad_frame_histogram:
-        # plot a histogram representing the duration of each lapse of tracking (when state does not equal 3)
-        num_consecutive, freq_consecutive = np.unique(np.unique(label(bad_frame_bool.values)[0], return_counts=True)[1][1:], return_counts=True)
-        fig = go.Figure(data=[go.Bar(x=num_consecutive, y=freq_consecutive)])
-        if limit is not None:
-            fig.add_vline(x=limit, line_width=2, line_color='black', line_dash='dath', opacity=1)
-        fig.update_layout(template='simple_white', width=400, height=400, title_text=os.path.basename(dpath),
-                        yaxis_title='Frequency', xaxis_title='Number of Consecutive<br>Bad Frames')
-        fig.show()
 
     data['Dist'] = np.append(0, np.sqrt((np.diff(data['Y']))**2 + (np.diff(data['X']))**2))
     
