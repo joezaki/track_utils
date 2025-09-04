@@ -493,7 +493,7 @@ def occupancy_plot(
         dirname = os.path.dirname(save_path)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-        fig.write_image(save_path, scale=4)
+        fig.write_image(save_path, scale=2)
 
     config = {
         'scrollZoom':True,
@@ -650,7 +650,7 @@ def plot_occupancy_list(
         dirname = os.path.dirname(save_path)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-        fig.write_image(save_path, scale=4)
+        fig.write_image(save_path, scale=2)
 
     config = {
         'scrollZoom':True,
