@@ -510,7 +510,7 @@ def occupancy_plot(
 # -----------------------------------------
 
 def plot_occupancy_list(
-        dpath_list,
+        data_list,
         frame,
         colors,
         subplot_titles,
@@ -534,12 +534,13 @@ def plot_occupancy_list(
 
     Parameters
     ==========
-    dpath_list : list
-        List of file paths to where the data of interest are stored.
+    data_list : list
+        List of either file paths to where the data of interest are stored, or a list of
+        dataframes of already loaded data.
     frame : str
         Which frame of reference the plot uses. One of 'Room' or 'Arena'.
     colors : list or str
-        What color to plot each subplot. Must be the same length as dpath_list or a string.
+        What color to plot each subplot. Must be the same length as data_list or a string.
     subplot_titles : list
         list of titles for each subplot.
     radius : float
@@ -571,13 +572,13 @@ def plot_occupancy_list(
     """
 
 
-    rows = int(np.ceil(len(dpath_list) / cols))
+    rows = int(np.ceil(len(data_list) / cols))
 
     specs = [[{'type': 'polar'} for row in np.arange(cols)] for col in np.arange(rows)] if plot_type == 'polar' else None
     fig = make_subplots(rows=rows, cols=cols, subplot_titles=subplot_titles,
                         horizontal_spacing=subplot_spacing, vertical_spacing=subplot_spacing, specs=specs)
         
-    for i, dpath in enumerate(dpath_list):
+    for i, d in enumerate(data_list):
         if ((type(start_angle) == int)   & (type(start_angle) == int)) | \
            ((type(end_angle)   == float) & (type(start_angle) == float)):
             angles = {'start_angle':start_angle,
@@ -591,7 +592,10 @@ def plot_occupancy_list(
         row = int(i / cols) + 1
         col = (i % cols) + 1
 
-        data = parse_data_file(dpath)
+        if type(d) is str:
+            data = parse_data_file(d)
+        else:
+            data = d
 
         if end == None:
             time_range = np.arange(int(beg / sampling_rate), data.shape[0])
