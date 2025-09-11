@@ -168,23 +168,40 @@ def getMeanBinnedVector_2d(matrix, bins, return_format="array"):
 ## Plotting Functions
 ## ==================
 
-# from: https://community.plotly.com/t/how-to-draw-a-filled-circle-segment/59583/2
+# adapted from: https://community.plotly.com/t/how-to-draw-a-filled-circle-segment/59583/2
 # for plotting shock zone in occupancy plots
-def degree2rad(degrees):
-    return degrees*np.pi/180
-def disk_part(center=[0,0], radius=1, start_angle=0, end_angle=90, n=50, seg=True):
-    sta = degree2rad(start_angle)
-    ea = degree2rad(end_angle)
-    t = np.linspace(sta, ea, n)
-    x = center[0] + radius*np.cos(t)
-    y = center[1] +radius*np.sin(t)
-    path = f"M {x[0]},{y[0]}"
-    for xc, yc in zip(x[1:], y[1:]):
-        path += f" L{xc},{yc}"
-    if seg: #segment
-        return path + " Z"
-    else: #disk sector
-        return path + f" L{center[0]},{center[1]} Z" #sector
+def disk_part(
+        center=[0,0],
+        radius=1,
+        r_min=0,
+        r_max=1,
+        start_angle=0,
+        end_angle=90,
+        n=100
+        ):
+    start_angle = np.deg2rad(start_angle)
+    end_angle = np.deg2rad(end_angle)
+
+    r_min = r_min * radius
+    r_max = r_max * radius
+
+    n = int(max(3, n) * (end_angle - start_angle) / (np.pi*2))
+    outer_thetas = np.linspace(start_angle, end_angle, n)
+    inner_thetas = outer_thetas[::-1]
+
+    outer_pts = [(center[0] + r_max * np.cos(t), center[1] + r_max * np.sin(t)) for t in outer_thetas]
+    inner_pts = [(center[0] + r_min * np.cos(t), center[1] + r_min * np.sin(t)) for t in inner_thetas] if r_min!=0 else [center]
+
+    fmt = lambda xy: f"{xy[0]:.6f} {xy[1]:.6f}"
+    parts = []
+    parts.append("M " + fmt(outer_pts[0]))
+    for p in outer_pts[1:]:
+        parts.append("L " + fmt(p))
+    for p in inner_pts:
+        parts.append("L " + fmt(p))
+    parts.append("Z")
+    path = " ".join(parts)
+    return path
 
 
 def is_inside_shape(width, height, shape, shape_dims):
@@ -227,6 +244,7 @@ def draw_arena(
         y0=0,
         x1=255,
         y1=255,
+        zone_location='inside'
         ):
     '''
     Creates plotly shapes for the circle of the arena and a wedge of the shock zone.
@@ -242,11 +260,21 @@ def draw_arena(
         Should be one of 'heatmap', 'line', or 'scatter'. Default is 'heatmap'.
     x0, y0, x1, y1 : int or float
         The edges of the circle to be drawn. Defaults are 0, 0, 255, 255, respectively.
+    zone_location : str
+        'inside' to plot a pie wedge inside the arena, or 'outside' to plot an outline around the
+        circumference of the arena around the specified angles. Default is 'inside'.
     '''
     arena = dict(type="circle", layer='above',
                   x0=x0, y0=y0, x1=x1, y1=y1, fillcolor="rgba(0,0,0,0)",
                   line=dict(color="black", width=1), opacity=1)
-    shock_zone_shape = disk_part(center=[radius,radius], radius=radius, start_angle=start_angle, end_angle=end_angle, seg=False)
+    
+    if zone_location == 'inside':
+        shock_zone_shape = disk_part(center=[radius,radius], radius=radius, start_angle=start_angle, end_angle=end_angle)
+    elif zone_location == 'outside':
+        shock_zone_shape = disk_part(center=[radius,radius], radius=radius, start_angle=start_angle, end_angle=end_angle,
+                                     r_min=1.05, r_max=1.15)
+    else:
+        raise Exception("Invalid zone_location. Must be one of ['inside', 'outside'].")
     shock_zone = dict(type="path", layer='above' if plot_type=='heatmap' else 'below',
                       path=shock_zone_shape,
                       fillcolor="lightpink", line=dict(color='crimson', width=2), opacity=0.5)
@@ -405,6 +433,7 @@ def occupancy_plot(
         title=None,
         plot_type='line',
         hist_bars=50,
+        zone_location='inside',
         plot_width=800,
         plot_height=800,
         save_path=None,
@@ -434,6 +463,9 @@ def occupancy_plot(
         heatmap plot, or polar histogram plot, respectively. Default is 'line'.
     hist_bars : int
         Number of bars to break up the polar histogram into. Only used if plot_type=='polar'. Default is 50.
+    zone_location : str
+        'inside' to plot a pie wedge inside the arena, or 'outside' to plot an outline around the
+        circumference of the arena around the specified angles. Default is 'inside'.
     plot_width, plot_height : int
         Width and height of the plot. Defaults are 800 and 800.
     save_path : str
@@ -466,7 +498,7 @@ def occupancy_plot(
     # plot outline of box and shock zone
     if plot_type != 'polar':
         arena, shock_zone = draw_arena(radius=radius, start_angle=start_angle, end_angle=end_angle,
-                                    plot_type=plot_type)
+                                    plot_type=plot_type, zone_location=zone_location)
         fig.add_shape(arena)
         fig.add_shape(shock_zone)
     else:
@@ -522,6 +554,7 @@ def plot_occupancy_list(
         plot_type = 'line',
         beg=0,
         end=None,
+        zone_location='inside',
         cols=4,
         subplot_spacing=0.05,
         plot_width=1000,
@@ -557,6 +590,9 @@ def plot_occupancy_list(
     beg, end : int
         The beginning and end of the total time to be plotted, in seconds, if subsetting is desired. By default,
         no subsetting is done.
+    zone_location : str
+        'inside' to plot a pie wedge inside the arena, or 'outside' to plot an outline around the
+        circumference of the arena around the specified angles. Default is 'inside'.
     cols : int
         Number of columns to separate the subplots into. Rows are calculated by default based on total
         number of subplots. Default is 4.
@@ -622,7 +658,8 @@ def plot_occupancy_list(
         if plot_type != 'polar':
             arena, shock_zone = draw_arena(plot_type=plot_type,
                                            start_angle=angles['start_angle'],
-                                           end_angle=angles['end_angle'])
+                                           end_angle=angles['end_angle'],
+                                           zone_location=zone_location)
             fig.add_shape(arena, row=row, col=col)
             fig.add_shape(shock_zone, row=row, col=col)
             fig.update_xaxes(visible=False,
