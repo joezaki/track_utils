@@ -6,7 +6,8 @@ The file relies on the use of the following packages, and this code was develope
 - `scipy = 1.15.2`
 - `geopandas = 1.0.1`
 - `shapely = 2.1.0`
-- `plotly = 6.0.1`
+- `plotly = 6.3.0`
+- `kaleido = 1.1.0` (optional, for static image export)
 
 
 # _Installation instructions_
