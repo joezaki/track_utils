@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "track_utils"
+version = "0.1.0"
+description = "Utility functions for Tracker behavioral data"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name="Joe Zaki", email="joezaki.95@gmail.com" }
+]
+dependencies = [
+    "numpy>=2.2.4",
+    "pandas>=2.2.3",
+    "scipy>=1.15.2",
+    "geopandas>=1.0.1",
+    "shapely>=2.1.0",
+    "plotly>=6.3.0",
+    "kaleido>=1.1.0",
+]
+
+[tools.setuptools.packages.find]
+where = ["src"]
+
+[project.urls]
+"Homepage" = "https://github.com/joezaki/track_utils"
